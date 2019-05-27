@@ -9,10 +9,10 @@ def setup_dataloader(name,h=128,w=128,batch_size=4,num_workers=4):
     let's use store all images on cpu memmory
     because this is for small dataset
     '''
-    if name == "face":
-        img_path_list = glob.glob("./data/face/*.png")
-    elif name=="anime":
-        img_path_list = glob.glob("./data/anime/*.png")
+    if name == "punk":
+        img_path_list = glob.glob("./data/punk/*.jpg")
+    elif name=="rave":
+        img_path_list = glob.glob("./data/rave/*.jpg")
     else:
         raise NotImplementedError("Unknown dataset %s"%name)
         
