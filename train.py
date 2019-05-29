@@ -17,7 +17,7 @@ from loss.AdaBIGGANLoss import AdaBIGGANLoss
 
 def argparse_setup():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', type=str, default="anime", help = "dataset. anime or face. ")
+    parser.add_argument('--dataset', type=str, default="rave", help = "dataset. ")
     parser.add_argument('--pretrained', type=str, default="./data/G_ema.pth", help = "pretrained BigGAN model")
 
 
