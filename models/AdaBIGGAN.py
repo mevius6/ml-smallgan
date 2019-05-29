@@ -219,8 +219,8 @@ if __name__ == "__main__":
     utils.count_parameters(G)
 
     # Load weights.
-    # weights_path = "../official_biggan_pytorch/data/G_ema.pth"  # Change this.
-    weights_path = "./data/G.pth"  # Change this.
+    weights_path = "../official_biggan_pytorch/data/G_ema.pth"  # Change this.
+    # weights_path = "./data/G.pth"  # Change this.
     G.load_state_dict(torch.load(weights_path))
 
     model = AdaBIGGAN(G,dataset_size=42)
