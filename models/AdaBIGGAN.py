@@ -7,7 +7,7 @@ import torch.nn as nn
 
 
 class AdaBIGGAN(nn.Module):
-    def __init__(self,generator, dataset_size, embed_dim=120, shared_embed_dim = 128,cond_embed_dim = 20,embedding_init="zero"):
+    def __init__(self,generator, dataset_size, embed_dim=140, shared_embed_dim = 128,cond_embed_dim = 20,embedding_init="zero"):
         '''
         generator: original big gan generator
         dataset_size: (small) number of training images. It should be less than 100. If more than 100, it's better to fine tune using normal adverserial training
@@ -232,6 +232,6 @@ if __name__ == "__main__":
     
     output = model(z)
     
-    assert output.shape == (batch_size,3,128,128)
+    assert output.shape == (batch_size,3,256,256)
     
     print("simple test pased!")
