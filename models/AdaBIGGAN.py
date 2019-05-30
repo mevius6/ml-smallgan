@@ -232,6 +232,6 @@ if __name__ == "__main__":
     
     output = model(z)
     
-    assert output.shape == (batch_size,3,256,256)
+    assert output.shape == (batch_size,3,128,128)
     
     print("simple test pased!")
