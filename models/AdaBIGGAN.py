@@ -199,7 +199,7 @@ if __name__ == "__main__":
     config["D_ch"] = 96
     config["hier"] = True
     config["dim_z"] = 120
-    config["shared_dim"] = 128
+    config["shared_dim"] = 256
     config["G_shared"] = True
     config = utils.update_config_roots(config)
     config["skip_init"] = True
