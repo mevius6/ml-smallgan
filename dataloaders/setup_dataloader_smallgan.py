@@ -9,8 +9,8 @@ def setup_dataloader(name,h=128,w=128,batch_size=4,num_workers=4):
     let's use store all images on cpu memmory
     because this is for small dataset
     '''
-    if name == "gabba":
-        img_path_list = glob.glob("./data/gabba/*.jpg")
+    if name == "goth":
+        img_path_list = glob.glob("./data/goth/*.jpg")
     elif name=="punk":
         img_path_list = glob.glob("./data/punk/*.jpg")
     elif name=="rap":
