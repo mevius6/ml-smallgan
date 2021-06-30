@@ -1,1 +1,1 @@
-# ml-smallgan
+# SmallGan
