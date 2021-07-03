@@ -1,44 +1,43 @@
 #this class is trying to do the same thig as the author's implementation
-# https://github.com/nogu-atsu/SmallGAN/blob/2293700dce1e2cd97e25148543532814659516bd/gen_models/ada_generator.py#L242-L294 
+# https://github.com/nogu-atsu/SmallGAN/blob/2293700dce1e2cd97e25148543532814659516bd/gen_models/ada_generator.py#L242-L294
 
 import torch
 import torchvision
 import torch.nn as nn
-
 
 class AdaBIGGAN(nn.Module):
     def __init__(self,generator, dataset_size, embed_dim=120, shared_embed_dim = 128,cond_embed_dim = 20,embedding_init="zero"):
         '''
         generator: original big gan generator
         dataset_size: (small) number of training images. It should be less than 100. If more than 100, it's better to fine tune using normal adverserial training
-        shared_embed_dim: class shared embedding dim. 
+        shared_embed_dim: class shared embedding dim.
         cond_embed_dim: class conditional embedding dim
-        See Generator row 2 in table 4 in the BigGAN paper (1809.11096v2) where Linear(20+129), which means Linear(cond_embed_dim+shared_embed_dim) 
+        See Generator row 2 in table 4 in the BigGAN paper (1809.11096v2) where Linear(20+129), which means Linear(cond_embed_dim+shared_embed_dim)
         '''
         super(AdaBIGGAN,self).__init__()
         self.generator = generator
-            
+
         #same as z in the chainer implementation
         self.embeddings = nn.Embedding(dataset_size, embed_dim)
         if embedding_init == "zero":
             self.embeddings.from_pretrained(torch.zeros(dataset_size,embed_dim),freeze=False)
-        
+
         in_channels = self.generator.blocks[0][0].conv1.in_channels
         self.bsa_linear_scale = torch.nn.Parameter(torch.ones(in_channels,))
         self.bsa_linear_bias = torch.nn.Parameter(torch.zeros(in_channels,))
-        
+
         self.linear = nn.Linear(1, shared_embed_dim, bias=False)
         #torch.nn.init.kaiming_normal_(self.linear.weight)
         init_weight = generator.shared.weight.mean(dim=0,keepdim=True).transpose(1,0)
         assert self.linear.weight.data.shape == init_weight.shape
         self.linear.weight.data  = init_weight
         del generator.shared
-        
+
         self.set_training_parameters()
-                
+
     def forward(self, z):
         '''
-        z: tensor whose shape is (batch_size, shared_embed_dim) . in the training time noise (`epsilon` in the original paper) should be added. 
+        z: tensor whose shape is (batch_size, shared_embed_dim) . in the training time noise (`epsilon` in the original paper) should be added.
         '''
         #originally copied from the biggan repo
         #https://github.com/ajbrock/BigGAN-PyTorch/blob/ba3d05754120e9d3b68313ec7b0f9833fc5ee8bc/BigGAN.py#L226-L251
@@ -71,10 +70,10 @@ class AdaBIGGAN(nn.Module):
         h = self.generator.linear(z)
         # Reshape
         h = h.view(h.size(0), -1, self.generator.bottom_width, self.generator.bottom_width)
-        
+
         #Do scale and bias (i.e. apply newly intoroduced statistic parameters) for the first linear layer
-        h = h*self.bsa_linear_scale.view(1,-1,1,1) + self.bsa_linear_bias.view(1,-1,1,1) 
-        
+        h = h*self.bsa_linear_scale.view(1,-1,1,1) + self.bsa_linear_bias.view(1,-1,1,1)
+
         # Loop over blocks
         for index, blocklist in enumerate(self.generator.blocks):
             # Second inner loop in case block has multiple layers
@@ -83,9 +82,9 @@ class AdaBIGGAN(nn.Module):
 
         # Apply batchnorm-relu-conv-tanh at output
         return torch.tanh(self.generator.output_layer(h))
-    
 
-    
+
+
     def set_training_parameters(self):
         '''
         set requires_grad=True only for parameters to be updated, requires_grad=False for others.
@@ -93,21 +92,21 @@ class AdaBIGGAN(nn.Module):
         #set all parameters requires_grad=False first
         for param in self.parameters():
             param.requires_grad = False
-            
+
         named_params_requires_grad = {}
         named_params_requires_grad.update(self.batch_stat_gen_params())
         named_params_requires_grad.update(self.linear_gen_params())
         named_params_requires_grad.update(self.bsa_linear_params())
         named_params_requires_grad.update(self.calss_conditional_embeddings_params())
         named_params_requires_grad.update(self.emebeddings_params())
-        
+
         for name,param in named_params_requires_grad.items():
             param.requires_grad = True
-            
+
     def batch_stat_gen_params(self):
         '''
         get named parameters to generate batch statistics
-        Weight corresponding to "Hyper" in Chainer implementation 
+        Weight corresponding to "Hyper" in Chainer implementation
         ```
             blocks.0.0.bn1.gain.weight torch.Size([1536, 148])
             blocks.0.0.bn1.bias.weight torch.Size([1536, 148])
@@ -138,7 +137,7 @@ class AdaBIGGAN(nn.Module):
                     name = name+"."+name2
                     params = value2
                     named_params[name] = params
-                    
+
         return named_params
 
     def linear_gen_params(self):
@@ -174,20 +173,20 @@ class AdaBIGGAN(nn.Module):
         '''
         return  {"embeddings.weight":self.embeddings.weight}
 
-    
+
 if __name__ == "__main__":
     import sys
     sys.path.append("../official_biggan_pytorch/")
     sys.path.append("../")
     from official_biggan_pytorch import utils
-    
+
     import torch
     import torchvision
 
     parser = utils.prepare_parser()
     parser = utils.add_sample_parser(parser)
     config = vars(parser.parse_args(args=[]))
-    
+
     # taken from https://github.com/ajbrock/BigGAN-PyTorch/issues/8
     config["resolution"] = utils.imsize_dict["I128_hdf5"]
     config["n_classes"] = utils.nclass_dict["I128_hdf5"]
@@ -225,13 +224,13 @@ if __name__ == "__main__":
 
     model = AdaBIGGAN(G,dataset_size=42)
     model = model.cuda()
-    
+
     batch_size = 4
-    
+
     z = torch.ones((batch_size,140)).cuda()
-    
+
     output = model(z)
-    
+
     assert output.shape == (batch_size,3,128,128)
-    
+
     print("simple test pased!")

@@ -11,7 +11,6 @@
 import unittest
 import torch
 
-
 class TorchTestCase(unittest.TestCase):
     def assertTensorClose(self, x, y):
         adiff = float((x - y).abs().max())
@@ -26,4 +25,3 @@ class TorchTestCase(unittest.TestCase):
             'rdiff={}\n'
         ).format(adiff, rdiff)
         self.assertTrue(torch.allclose(x, y), message)
-

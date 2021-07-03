@@ -7,7 +7,7 @@ class Vgg16PerceptualLoss(torch.nn.Module):
         '''
         perceptual_indices: indices to use for perceptural loss
         loss_func: loss type l1 or l2
-        
+
         Here's the list of layers and its indices. Fully connected layers are dopped.
         (0): Conv2d(3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
         (1): ReLU(inplace)
@@ -47,14 +47,14 @@ class Vgg16PerceptualLoss(torch.nn.Module):
         max_layer_idx = max(perceptual_indices)
         self.perceptual_indices = set(perceptual_indices)#set is faster to query
         self.vgg_partial = torch.nn.Sequential(*list(vgg_pretrained_features.children())[0:max_layer_idx])
-        
+
         if loss_func == "l1":
             self.loss_func = F.l1_loss
         elif loss_func == "l2":
             self.loss_func = F.mse_loss
         else:
             raise NotImpementedError(loss_func)
-        
+
         if not requires_grad:
             for param in self.parameters():
                 param.requires_grad = False
@@ -67,11 +67,11 @@ class Vgg16PerceptualLoss(torch.nn.Module):
         mean = batch.new_tensor([0.485, 0.456, 0.406]).view(-1, 1, 1)
         std = batch.new_tensor([0.229, 0.224, 0.225]).view(-1, 1, 1)
         return (batch - mean) / std
-    
+
     def rescale(self,batch,lower,upper):
         '''
         rescale image to 0 to 1
-        batch: batched images 
+        batch: batched images
         upper: upper bound of pixel
         lower: lower bound of pixel
         '''
@@ -80,13 +80,13 @@ class Vgg16PerceptualLoss(torch.nn.Module):
     def forward_img(self, h):
         '''
         h: image batch
-        '''        
+        '''
         intermidiates = []
         for i,layer in enumerate(self.vgg_partial):
             h = layer(h)
             if i in self.perceptual_indices:
                 intermidiates.append(h)
-        return intermidiates    
+        return intermidiates
 
     def forward(self, img1, img2, img1_minmax=(0,1),img2_minmax=(0,1), apply_imagenet_norm = True):
         '''
@@ -100,13 +100,13 @@ class Vgg16PerceptualLoss(torch.nn.Module):
             img1 = self.rescale(img1,img1_minmax[0],img1_minmax[1])
         if img2_minmax!=(0,1):
             img2 = self.rescale(img2,img2_minmax[0],img2_minmax[1])
-            
+
         if apply_imagenet_norm:
             img1 = self.normalize(img1)
             img2 = self.normalize(img2)
-        
+
         losses = []
         for img1_h,img2_h in zip(self.forward_img(img1),self.forward_img(img2)):
             losses.append(self.loss_func(img1_h,img2_h))
-        
+
         return losses

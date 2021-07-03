@@ -55,9 +55,9 @@ def power_iteration(W, u_, update=True, eps=1e-12):
 class identity(nn.Module):
   def forward(self, input):
     return input
- 
 
-# Spectral normalization base class 
+
+# Spectral normalization base class
 class SN(object):
   def __init__(self, num_svs, num_itrs, num_outputs, transpose=False, eps=1e-12):
     # Number of power iterations per step
@@ -72,18 +72,18 @@ class SN(object):
     for i in range(self.num_svs):
       self.register_buffer('u%d' % i, torch.randn(1, num_outputs))
       self.register_buffer('sv%d' % i, torch.ones(1))
-  
+
   # Singular vectors (u side)
   @property
   def u(self):
     return [getattr(self, 'u%d' % i) for i in range(self.num_svs)]
 
-  # Singular values; 
-  # note that these buffers are just for logging and are not used in training. 
+  # Singular values;
+  # note that these buffers are just for logging and are not used in training.
   @property
   def sv(self):
    return [getattr(self, 'sv%d' % i) for i in range(self.num_svs)]
-   
+
   # Compute the spectrally-normalized weight
   def W_(self):
     W_mat = self.weight.view(self.weight.size(0), -1)
@@ -91,25 +91,25 @@ class SN(object):
       W_mat = W_mat.t()
     # Apply num_itrs power iterations
     for _ in range(self.num_itrs):
-      svs, us, vs = power_iteration(W_mat, self.u, update=self.training, eps=self.eps) 
+      svs, us, vs = power_iteration(W_mat, self.u, update=self.training, eps=self.eps)
     # Update the svs
     if self.training:
       with torch.no_grad(): # Make sure to do this in a no_grad() context or you'll get memory leaks!
         for i, sv in enumerate(svs):
-          self.sv[i][:] = sv     
+          self.sv[i][:] = sv
     return self.weight / svs[0]
 
 
 # 2D Conv layer with spectral norm
 class SNConv2d(nn.Conv2d, SN):
   def __init__(self, in_channels, out_channels, kernel_size, stride=1,
-             padding=0, dilation=1, groups=1, bias=True, 
+             padding=0, dilation=1, groups=1, bias=True,
              num_svs=1, num_itrs=1, eps=1e-12):
-    nn.Conv2d.__init__(self, in_channels, out_channels, kernel_size, stride, 
+    nn.Conv2d.__init__(self, in_channels, out_channels, kernel_size, stride,
                      padding, dilation, groups, bias)
-    SN.__init__(self, num_svs, num_itrs, out_channels, eps=eps)    
+    SN.__init__(self, num_svs, num_itrs, out_channels, eps=eps)
   def forward(self, x):
-    return F.conv2d(x, self.W_(), self.bias, self.stride, 
+    return F.conv2d(x, self.W_(), self.bias, self.stride,
                     self.padding, self.dilation, self.groups)
 
 
@@ -127,12 +127,12 @@ class SNLinear(nn.Linear, SN):
 # We use num_embeddings as the dim instead of embedding_dim here
 # for convenience sake
 class SNEmbedding(nn.Embedding, SN):
-  def __init__(self, num_embeddings, embedding_dim, padding_idx=None, 
+  def __init__(self, num_embeddings, embedding_dim, padding_idx=None,
                max_norm=None, norm_type=2, scale_grad_by_freq=False,
                sparse=False, _weight=None,
                num_svs=1, num_itrs=1, eps=1e-12):
     nn.Embedding.__init__(self, num_embeddings, embedding_dim, padding_idx,
-                          max_norm, norm_type, scale_grad_by_freq, 
+                          max_norm, norm_type, scale_grad_by_freq,
                           sparse, _weight)
     SN.__init__(self, num_svs, num_itrs, num_embeddings, eps=eps)
   def forward(self, x):
@@ -158,7 +158,7 @@ class Attention(nn.Module):
     # Apply convs
     theta = self.theta(x)
     phi = F.max_pool2d(self.phi(x), [2,2])
-    g = F.max_pool2d(self.g(x), [2,2])    
+    g = F.max_pool2d(self.g(x), [2,2])
     # Perform reshapes
     theta = theta.view(-1, self. ch // 8, x.shape[2] * x.shape[3])
     phi = phi.view(-1, self. ch // 8, x.shape[2] * x.shape[3] // 4)
@@ -192,7 +192,7 @@ def fused_bn(x, mean, var, gain=None, bias=None, eps=1e-5):
 def manual_bn(x, gain=None, bias=None, return_mean_var=False, eps=1e-5):
   # Cast x to float32 if necessary
   float_x = x.float()
-  # Calculate expected value of x (m) and expected value of x**2 (m2)  
+  # Calculate expected value of x (m) and expected value of x**2 (m2)
   # Mean of x
   m = torch.mean(float_x, [0, 2, 3], keepdim=True)
   # Mean of x squared
@@ -202,14 +202,14 @@ def manual_bn(x, gain=None, bias=None, return_mean_var=False, eps=1e-5):
   # Cast back to float 16 if necessary
   var = var.type(x.type())
   m = m.type(x.type())
-  # Return mean and variance for updating stored mean/var if requested  
+  # Return mean and variance for updating stored mean/var if requested
   if return_mean_var:
     return fused_bn(x, m, var, gain, bias, eps), m.squeeze(), var.squeeze()
   else:
     return fused_bn(x, m, var, gain, bias, eps)
 
 
-# My batchnorm, supports standing stats    
+# My batchnorm, supports standing stats
 class myBN(nn.Module):
   def __init__(self, num_channels, eps=1e-5, momentum=0.1):
     super(myBN, self).__init__()
@@ -225,13 +225,13 @@ class myBN(nn.Module):
     self.register_buffer('accumulation_counter', torch.zeros(1))
     # Accumulate running means and vars
     self.accumulate_standing = False
-    
+
   # reset standing stats
   def reset_stats(self):
     self.stored_mean[:] = 0
     self.stored_var[:] = 0
     self.accumulation_counter[:] = 0
-    
+
   def forward(self, x, gain, bias):
     if self.training:
       out, mean, var = manual_bn(x, gain, bias, return_mean_var=True, eps=self.eps)
@@ -246,17 +246,17 @@ class myBN(nn.Module):
         self.stored_var[:] = self.stored_var * (1 - self.momentum) + var * self.momentum
       return out
     # If not in training mode, use the stored statistics
-    else:         
+    else:
       mean = self.stored_mean.view(1, -1, 1, 1)
       var = self.stored_var.view(1, -1, 1, 1)
-      # If using standing stats, divide them by the accumulation counter   
+      # If using standing stats, divide them by the accumulation counter
       if self.accumulate_standing:
         mean = mean / self.accumulation_counter
         var = var / self.accumulation_counter
       return fused_bn(x, mean, var, gain, bias, self.eps)
 
 
-# Simple function to handle groupnorm norm stylization                      
+# Simple function to handle groupnorm norm stylization
 def groupnorm(x, norm_style):
   # If number of channels specified in norm_style:
   if 'ch' in norm_style:
@@ -275,7 +275,7 @@ def groupnorm(x, norm_style):
 # output size is the number of channels, input size is for the linear layers
 # Andy's Note: this class feels messy but I'm not really sure how to clean it up
 # Suggestions welcome! (By which I mean, refactor this and make a pull request
-# if you want to make this more readable/usable). 
+# if you want to make this more readable/usable).
 class ccbn(nn.Module):
   def __init__(self, output_size, input_size, which_linear, eps=1e-5, momentum=0.1,
                cross_replica=False, mybn=False, norm_style='bn',):
@@ -294,16 +294,16 @@ class ccbn(nn.Module):
     self.mybn = mybn
     # Norm style?
     self.norm_style = norm_style
-    
+
     if self.cross_replica:
       self.bn = SyncBN2d(output_size, eps=self.eps, momentum=self.momentum, affine=False)
     elif self.mybn:
       self.bn = myBN(output_size, self.eps, self.momentum)
     elif self.norm_style in ['bn', 'in']:
       self.register_buffer('stored_mean', torch.zeros(output_size))
-      self.register_buffer('stored_var',  torch.ones(output_size)) 
-    
-    
+      self.register_buffer('stored_var',  torch.ones(output_size))
+
+
   def forward(self, x, y):
     # Calculate class-conditional gains and biases
     gain = (1 + self.gain(y)).view(y.size(0), -1, 1, 1)
@@ -347,16 +347,16 @@ class bn(nn.Module):
     self.cross_replica = cross_replica
     # Use my batchnorm?
     self.mybn = mybn
-    
+
     if self.cross_replica:
-      self.bn = SyncBN2d(output_size, eps=self.eps, momentum=self.momentum, affine=False)    
+      self.bn = SyncBN2d(output_size, eps=self.eps, momentum=self.momentum, affine=False)
     elif mybn:
       self.bn = myBN(output_size, self.eps, self.momentum)
      # Register buffers if neither of the above
-    else:     
+    else:
       self.register_buffer('stored_mean', torch.zeros(output_size))
       self.register_buffer('stored_var',  torch.ones(output_size))
-    
+
   def forward(self, x, y=None):
     if self.cross_replica or self.mybn:
       gain = self.gain.view(1,-1,1,1)
@@ -366,19 +366,19 @@ class bn(nn.Module):
       return F.batch_norm(x, self.stored_mean, self.stored_var, self.gain,
                           self.bias, self.training, self.momentum, self.eps)
 
-                          
+
 # Generator blocks
 # Note that this class assumes the kernel size and padding (and any other
 # settings) have been selected in the main generator module and passed in
 # through the which_conv arg. Similar rules apply with which_bn (the input
-# size [which is actually the number of channels of the conditional info] must 
+# size [which is actually the number of channels of the conditional info] must
 # be preselected)
 class GBlock(nn.Module):
   def __init__(self, in_channels, out_channels,
-               which_conv=nn.Conv2d, which_bn=bn, activation=None, 
+               which_conv=nn.Conv2d, which_bn=bn, activation=None,
                upsample=None):
     super(GBlock, self).__init__()
-    
+
     self.in_channels, self.out_channels = in_channels, out_channels
     self.which_conv, self.which_bn = which_conv, which_bn
     self.activation = activation
@@ -388,7 +388,7 @@ class GBlock(nn.Module):
     self.conv2 = self.which_conv(self.out_channels, self.out_channels)
     self.learnable_sc = in_channels != out_channels or upsample
     if self.learnable_sc:
-      self.conv_sc = self.which_conv(in_channels, out_channels, 
+      self.conv_sc = self.which_conv(in_channels, out_channels,
                                      kernel_size=1, padding=0)
     # Batchnorm layers
     self.bn1 = self.which_bn(in_channels)
@@ -404,11 +404,11 @@ class GBlock(nn.Module):
     h = self.conv1(h)
     h = self.activation(self.bn2(h, y))
     h = self.conv2(h)
-    if self.learnable_sc:       
+    if self.learnable_sc:
       x = self.conv_sc(x)
     return h + x
-    
-    
+
+
 # Residual block for the discriminator
 class DBlock(nn.Module):
   def __init__(self, in_channels, out_channels, which_conv=SNConv2d, wide=True,
@@ -421,13 +421,13 @@ class DBlock(nn.Module):
     self.preactivation = preactivation
     self.activation = activation
     self.downsample = downsample
-        
+
     # Conv layers
     self.conv1 = self.which_conv(self.in_channels, self.hidden_channels)
     self.conv2 = self.which_conv(self.hidden_channels, self.out_channels)
     self.learnable_sc = True if (in_channels != out_channels) or downsample else False
     if self.learnable_sc:
-      self.conv_sc = self.which_conv(in_channels, out_channels, 
+      self.conv_sc = self.which_conv(in_channels, out_channels,
                                      kernel_size=1, padding=0)
   def shortcut(self, x):
     if self.preactivation:
@@ -441,20 +441,20 @@ class DBlock(nn.Module):
       if self.learnable_sc:
         x = self.conv_sc(x)
     return x
-    
+
   def forward(self, x):
     if self.preactivation:
       # h = self.activation(x) # NOT TODAY SATAN
-      # Andy's note: This line *must* be an out-of-place ReLU or it 
+      # Andy's note: This line *must* be an out-of-place ReLU or it
       #              will negatively affect the shortcut connection.
       h = F.relu(x)
     else:
-      h = x    
+      h = x
     h = self.conv1(h)
     h = self.conv2(self.activation(h))
     if self.downsample:
-      h = self.downsample(h)     
-        
+      h = self.downsample(h)
+
     return h + self.shortcut(x)
-    
+
 # dogball

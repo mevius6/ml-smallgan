@@ -78,19 +78,19 @@ class _SynchronizedBatchNorm(_BatchNorm):
         # else:
             # # print('there')
             # sum, ssum, num = self._slave_pipe.run_slave(_ChildMessage(input_sum, input_ssum, sum_size))
-        
+
         # print('how2')
         # num = sum_size
-        # print('Sum: %f, ssum: %f, sumsize: %f, insum: %f' %(float(sum.sum().cpu()), float(ssum.sum().cpu()), float(sum_size), float(input_sum.sum().cpu()))) 
+        # print('Sum: %f, ssum: %f, sumsize: %f, insum: %f' %(float(sum.sum().cpu()), float(ssum.sum().cpu()), float(sum_size), float(input_sum.sum().cpu())))
         # Fix the graph
         # sum = (sum.detach() - input_sum.detach()) + input_sum
         # ssum = (ssum.detach() - input_ssum.detach()) + input_ssum
-        
+
         # mean = sum / num
         # var = ssum / num - mean ** 2
         # # var = (ssum - mean * sum) / num
         # inv_std = torch.rsqrt(var + self.eps)
-        
+
         # Compute the output.
         if gain is not None:
           # print('gaining')
@@ -100,7 +100,7 @@ class _SynchronizedBatchNorm(_BatchNorm):
           output = (input - _unsqueeze_ft(mean)) * (_unsqueeze_ft(inv_std) * gain.squeeze(-1)) + bias.squeeze(-1)
         elif self.affine:
             # MJY:: Fuse the multiplication for speed.
-            output = (input - _unsqueeze_ft(mean)) * _unsqueeze_ft(inv_std * self.weight) + _unsqueeze_ft(self.bias)        
+            output = (input - _unsqueeze_ft(mean)) * _unsqueeze_ft(inv_std * self.weight) + _unsqueeze_ft(self.bias)
         else:
             output = (input - _unsqueeze_ft(mean)) * _unsqueeze_ft(inv_std)
 

@@ -21,7 +21,7 @@ def gpu_setup(gpu_id):
             print("can't import GPUtil. maybe you can do: pip install gputil")
             print("gpu id is set to -1")
             gpu_id = -1
-    
+
     gpu_id = int(gpu_id)
     if gpu_id >= 0:
         os.environ['CUDA_VISIBLE_DEVICES'] = str(gpu_id)
@@ -35,7 +35,7 @@ def gpu_setup(gpu_id):
 ###
 def savedir_setup(savedir,basedir="../experiments",args=None,append_args=[]):
     '''
-    setup savedir (save directory) with time. 
+    setup savedir (save directory) with time.
     Input: base savedir name if savedir=no it will create temp dir
     Return: savedir name with time
     '''
@@ -44,13 +44,13 @@ def savedir_setup(savedir,basedir="../experiments",args=None,append_args=[]):
     if savedir=="no":
         savedir = os.path.join("/tmp/",savedir+"_"+now)
     else:
-        if len(append_args) > 0 and args is not None: 
+        if len(append_args) > 0 and args is not None:
             for arg_opt in append_args:
                 arg_value = getattr(args, arg_opt)
                 savedir+="_"+arg_opt+"-"+str(arg_value)
 
         savedir = os.path.join(basedir,savedir+"_"+now)
-    
+
     #make savedir
     os.makedirs(savedir)
     print("made the log directory",savedir)
@@ -61,7 +61,7 @@ def save_args(savedir,args,name="args.json"):
     #save args as "args.json" in the savedir
     with open(os.path.join(savedir,name), 'w') as f:
         json.dump( vars(args), f, sort_keys=True, indent=4)
-        
+
 def save_json(dict,path):
     with open(path, 'w') as f:
         json.dump( dict, f, sort_keys=True, indent=4)
@@ -74,7 +74,7 @@ def check_githash():
     except:
         print("cannot import gitpython; try pip install gitpython")
         return None
-    
+
     #from https://stackoverflow.com/questions/14989858/get-the-current-git-hash-in-a-python-script
     #from https://stackoverflow.com/questions/31540449/how-to-check-if-a-git-repo-has-uncommitted-changes-using-python
     try:
@@ -89,8 +89,8 @@ def check_githash():
 
 def save_checkpoint(checkpoint_dir,device,model,iteration=0):
     model.eval()
-    
-    #pytroch saves gpu id into the state dict, 
+
+    #pytroch saves gpu id into the state dict,
     #so if model is on gpu, put it to cpu for saving
     if not str(device)=="cpu":
         model.cpu()

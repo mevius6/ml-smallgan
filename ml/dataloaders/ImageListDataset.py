@@ -22,11 +22,11 @@ class ImageListDataset(Dataset):
         self.label_exist = label_exist
         if self.label_exist==False:
             self.data = [ [item] for item in path_label_list]
-            
+
         self.transform = transform
         self.target_transform = target_transform
         self.loader = loader
-       
+
     def __getitem__(self, i):
         '''
         if label exists, get (img,label_idx) pair of i-th data point
@@ -38,7 +38,7 @@ class ImageListDataset(Dataset):
             return self.get_img(i), self.get_label_idx(i)
         else:
             return self.get_img(i)
-        
+
     def get_img_path(self,i):
         '''
         get img_path of i-th data point
@@ -60,11 +60,11 @@ class ImageListDataset(Dataset):
 
     def get_label(self,i):
         '''
-        get label of i-th data point as it is. 
+        get label of i-th data point as it is.
         '''
         assert self.label_exist
         return self.data[i][1]
-    
+
     def get_label_idx(self,i):
         '''
         get label idx, which start from 0 incrementally
