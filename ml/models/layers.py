@@ -1,6 +1,7 @@
-#copied drom https://github.com/ajbrock/BigGAN-PyTorch/tree/ba3d05754120e9d3b68313ec7b0f9833fc5ee8bc
-''' Layers
-    This file contains various layers for the BigGAN models.
+# copied from https://github.com/ajbrock/BigGAN-PyTorch/tree/ba3d05754120e9d3b68313ec7b0f9833fc5ee8bc
+'''
+Layers
+This file contains various layers for the BigGAN models.
 '''
 import numpy as np
 import torch
@@ -47,7 +48,7 @@ def power_iteration(W, u_, update=True, eps=1e-12):
         u_[i][:] = u
     # Compute this singular value and add it to the list
     svs += [torch.squeeze(torch.matmul(torch.matmul(v, W.t()), u.t()))]
-    #svs += [torch.sum(F.linear(u, W.transpose(0, 1)) * v)]
+    # svs += [torch.sum(F.linear(u, W.transpose(0, 1)) * v)]
   return svs, us, vs
 
 
@@ -446,7 +447,7 @@ class DBlock(nn.Module):
     if self.preactivation:
       # h = self.activation(x) # NOT TODAY SATAN
       # Andy's note: This line *must* be an out-of-place ReLU or it
-      #              will negatively affect the shortcut connection.
+      # will negatively affect the shortcut connection.
       h = F.relu(x)
     else:
       h = x

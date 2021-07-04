@@ -11,11 +11,11 @@ def setup_dataloader(name,h=128,w=128,batch_size=4,num_workers=4):
     '''
     if name == "goth":
         img_path_list = glob.glob("./data/goth/*.jpg")
-    elif name=="punk":
+    elif name == "punk":
         img_path_list = glob.glob("./data/punk/*.jpg")
-    elif name=="rap":
+    elif name == "rap":
         img_path_list = glob.glob("./data/rap/*.jpg")
-    elif name=="rave":
+    elif name == "rave":
         img_path_list = glob.glob("./data/rave/*.jpg")
     else:
         raise NotImplementedError("Unknown dataset %s"%name)

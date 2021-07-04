@@ -1,4 +1,4 @@
-#copid from https://github.com/ajbrock/BigGAN-PyTorch/tree/ba3d05754120e9d3b68313ec7b0f9833fc5ee8bc
+# copied from https://github.com/ajbrock/BigGAN-PyTorch/tree/ba3d05754120e9d3b68313ec7b0f9833fc5ee8bc
 
 import numpy as np
 import math
@@ -12,7 +12,7 @@ import torch.nn.functional as F
 from torch.nn import Parameter as P
 
 from . import layers
-#from sync_batchnorm import SynchronizedBatchNorm2d as SyncBatchNorm2d
+# from sync_batchnorm import SynchronizedBatchNorm2d as SyncBatchNorm2d
 
 # Architectures for G
 # Attention is passed in in the format '32_64' to mean applying an attention
@@ -282,7 +282,6 @@ def D_arch(ch=64, attention='64',ksize='333333', dilation='111111'):
   return arch
 
 class Discriminator(nn.Module):
-
   def __init__(self, D_ch=64, D_wide=True, resolution=128,
                D_kernel_size=3, D_attn='64', n_classes=1000,
                num_D_SVs=1, num_D_SV_itrs=1, D_activation=nn.ReLU(inplace=False),

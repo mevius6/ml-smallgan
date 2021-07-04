@@ -1,4 +1,4 @@
-#this class is trying to do the same thig as the author's implementation
+# this class is trying to do the same thig as the author's implementation
 # https://github.com/nogu-atsu/SmallGAN/blob/2293700dce1e2cd97e25148543532814659516bd/gen_models/ada_generator.py#L242-L294
 
 import torch
@@ -71,7 +71,7 @@ class AdaBIGGAN(nn.Module):
         # Reshape
         h = h.view(h.size(0), -1, self.generator.bottom_width, self.generator.bottom_width)
 
-        #Do scale and bias (i.e. apply newly intoroduced statistic parameters) for the first linear layer
+        # Do scale and bias (i.e. apply newly intoroduced statistic parameters) for the first linear layer
         h = h*self.bsa_linear_scale.view(1,-1,1,1) + self.bsa_linear_bias.view(1,-1,1,1)
 
         # Loop over blocks
